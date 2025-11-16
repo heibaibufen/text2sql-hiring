@@ -1,87 +1,187 @@
-# 问数机器人-测试题
+# 🤖 问数机器人 - 项目介绍
 
-## 1. 数据库
+## 📋 项目概述
 
-### 1.1 构建数据库
+问数机器人是一个基于 **LangGraph** 和 **Streamlit** 构建的智能问答系统，能够将自然语言转换为 SQL 查询并执行数据库操作。系统支持两种模式：**闲聊对话** 和 **数据库查询**，通过智能路由自动识别用户意图并选择合适的处理方式。
 
-#### 1.1.1 运行依赖
+## ✨ 核心特性
 
-* Justfile: https://github.com/casey/just?tab=readme-ov-file#packages
-* uv: https://github.com/astral-sh/uv
+### 🎯 智能问答
+- **自然语言转 SQL**: 将用户的自然语言问题自动生成 SQL 查询语句
+- **智能问题路由**: 自动识别是闲聊问题还是数据库查询问题
+- **多模态回答**: 支持文本对话、数据查询结果展示等多种回答形式
 
-> 请先安装依以上运行依赖
+### 🔄 LangGraph 工作流
+- **问题预处理**: 对用户输入进行预处理和格式化
+- **SQL 生成**: 基于数据库表结构生成准确的 SQL 语句
+- **SQL 校正**: 对生成的 SQL 进行语法和逻辑校正
+- **SQL 执行**: 连接数据库执行查询并获取结果
+- **答案总结**: 将查询结果整合为自然语言回答
 
-#### 1.1.2 启动数据库
+### 🌐 Web 界面
+- **现代化 UI**: 基于 Streamlit 构建的响应式用户界面
+- **实时状态监控**: 侧边栏显示系统各组件状态
+- **示例问题**: 内置快捷示例问题，一键体验
+- **结果可视化**: 查询结果以表格形式展示
 
-构建数据库：```just up```
+## 🏗️ 技术架构
 
-* 预览数据库：`http://localhost:8080`, db password:`winwin1234`
+### 后端技术栈
+```
+├── LangGraph        # 工作流编排框架
+├── LangChain        # LLM 应用框架
+├── SQLAlchemy       # 数据库 ORM
+├── PostgreSQL       # 主数据库
+├── DeepSeek API     # AI 模型服务
+└── Python 3.11+     # 编程语言
+```
 
-> 提示: `.env.example` to `.env`
+### 前端技术栈
+```
+├── Streamlit        # Web 应用框架
+```
 
-* 测试数据库：```just test```
-* 关闭数据库：```just down```
 
-### 1.2 数据表介绍 🌟
+## 🔄 工作流程
 
-* dim_category（类目维表）
-* dim_product （商品维表）
-* product_sales_monthly （商品月度销售表）
-    * 时间维度<biz_date>：2023年1月份至2025年5月份的销售数据。
-    * 地理维度：
-        * 大区<region_name>：包括华北地区,华东地区,西南地区,西北地区,华南地区,华中地区,东北地区,NULL。（NULL：代表全国）
-        * 省份<province_name>：包括24个省,NULL。（NULL：代表全国）
-  > 所以，当大区和省份同时为NULL时，才代表是全国。
-    * 业态维度<channel>：包括大卖场,大超市,小超市,便利店,食杂店,NULL。（NULL：代表全业态）
-  > 所以，当业态为NULL时，才代表是全业态。
+### 数据库查询流程
+```mermaid
+graph TD
+    A[用户输入问题] --> B[问题预处理]
+    B --> C{问题类型识别}
+    C -->|数据库类型| D[SQL 生成]
+    D --> E[SQL 校正]
+    E --> F[SQL 执行]
+    F --> G[答案总结]
+    G --> H[返回结果]
+    C -->|闲聊类型| I[闲聊对话]
+    I --> H
+```
 
-### 1.3 其他说明 🌟
+### 系统组件交互
+```mermaid
+graph LR
+    A[Streamlit Web界面] --> B[LangGraph 工作流]
+    B --> C[DeepSeek AI模型]
+    B --> D[PostgreSQL数据库]
+    D --> E[数据查询结果]
+    E --> A
+```
+## 🚀 快速开始
 
-* 新品：
-    * 说明：除非问题中明确指定了新品上市时间，否则新品默认指代**商品上市时间在近一年内**
-    * 相关字段：上市时间<launch_time>;
+### 1. 环境准备
+```bash
+# 克隆项目
+git clone https://github.com/heibaibufen/text2sql-hiring.git
+cd text2sql-hiring
 
-* 市场份额：
-    * 说明：即销售额的占比。（问题中若没有明确指名查询范围时，市场份额分母默认为类目销售额）
-    * 重点：市场份额的分子&分母，必须保证在同一时间、地理、业态维度下。（SQL示例：examples.yml - 2）
-    * 字段:`market_share`
-    * 公式:`{查询粒度[集团/品牌/商品]}的销售额 / {查询范围}总销售额`
+# 安装依赖
+uv sync
+```
 
-## 2. Text2SQL任务
+### 2. 环境配置
+```bash
+# 复制环境配置文件
+cp .env.example .env
 
-上面脚本已经构建本地Postgres数据库。请基于此数据库表，完成一个RAG数据问答机器人。
+# 编辑配置文件
+nano .env
+```
 
-1. `docs/examples.yml` 有部分SQL示例。
-2. `docs/test.csv` 是需要完成的**测试问题**。
+配置内容：
+```bash
+# 数据库连接
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DB=winwin
+POSTGRES_USER=winwin
+POSTGRES_PASSWORD=winwin1234
 
-> 问题描述为`数据库问题`，必须进行查询数据库来回答。
+# AI 模型配置
+OPENAI_API_KEY=your_api_key
+OPENAI_BASE_URL=https://api.deepseek.com/v1
+```
 
-技术实现需要完成以下功能 Pipelines（可自行设计其他pipe）:
+### 3. 启动数据库
+```bash
+# 使用 Docker 启动数据库
+cd docker
+docker-compose up -d
+```
 
-* Question Router（必须）
-* SQL Generator（必须）
-* SQL Correction（可选）
-* SQL Executor（必须）
-* Answer Summary（可选）
-* ...
+### 4. 启动 Web 应用
+```bash
+# 方法1: 使用启动脚本
+python run_streamlit.py
 
-## 3. 评分标准
+# 方法2: 直接启动
+streamlit run web_app.py
+```
 
-* RAG基础 🌟🌟🌟
-* COT思维 🌟
-* Pipeline设计能力 🌟🌟
-* 工程化编码能力 🌟🌟
-* 完成度 🌟🌟🌟
+访问 http://localhost:8501 开始使用！
 
-## 4. 结果要求
+## 💡 使用示例
 
-* 编程语言：Python优先、Typescript/Go均可。
-* Agent框架：不做限制，实现需求即可。
-* 测试问题: 要求至少可回答这些问题`(docs/test.csv)`
-* 保留完整的代码实现，提供一个HTTP服务、或者可以被方便调用的Lib，注明使用方式。
-* 【加分项】记录你的对项目实现的思路、实现经历、可继续优化的方向的描述。
+### 闲聊对话示例
+```
+用户：什么是LangGraph？
+回答：LangGraph 是一个基于 LangChain 的状态图框架，用于构建复杂的AI应用工作流...
 
-## 5. 提交方式
+用户：你今天心情怎么样？
+回答：作为AI助手，我没有真正的情感，但很高兴能为您提供帮助！
+```
 
-* 克隆仓库，打包完整项目Zip，发给HR。
-* 或者Fork项目（不要提PR），提交你的仓库链接，发给HR。
+### 数据库查询示例
+```
+用户：2024年即饮茶的总销售额是多少？
+系统：生成 SQL -> 执行查询 -> 返回结果
+回答：2024年即饮茶的总销售额为 1,234,567 元。
+
+用户：查询销量最高的10个商品
+系统：生成 SQL -> 执行查询 -> 展示表格
+回答：以下是销量最高的10个商品：
+[商品名称, 销售额]
+[可口可乐, 567,890]
+[百事可乐, 456,789]
+...
+```
+
+## 🛠️ 核心功能模块
+
+### 1. 智能路由器 (Question_Router)
+- 功能：识别用户问题类型
+- 输入：自然语言问题
+- 输出：问题类型（数据库类型/闲聊类型）
+
+### 2. SQL 生成器 (SQL_Generator)
+- 功能：根据问题和数据库结构生成 SQL
+- 特点：支持复杂查询、聚合函数、多表连接
+
+### 3. SQL 校正器 (SQL_Correction)
+- 功能：校正 SQL 语法和逻辑错误
+- 工具：使用正则表达式和规则引擎
+
+### 4. SQL 执行器 (SQL_Executor)
+- 功能：连接数据库执行 SQL
+- 特点：事务安全、错误处理
+
+### 5. 答案总结器 (Answer_Summary)
+- 功能：将查询结果转换为自然语言回答
+- 特点：智能总结、结果格式化
+
+## 🔧 高级配置
+
+### 自定义提示词模板
+项目支持自定义各种提示词模板：
+- 问题路由模板
+- SQL 生成模板
+- 答案总结模板
+- 闲聊对话模板
+
+### AI 模型配置
+支持多种 AI 模型：
+- DeepSeek Chat
+- OpenAI GPT 系列
+- 其他兼容 OpenAI API 的模型
+
+**🤖 问数机器人 - 让数据查询变得简单自然！**

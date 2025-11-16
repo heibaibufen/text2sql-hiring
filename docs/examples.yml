@@ -1,0 +1,126 @@
+examples:
+  - questions: 2024年即饮茶的总销售额
+    sql: |
+      ```
+      SELECT
+        "category",
+        SUM("amount") AS "amount"
+      FROM
+        "product_sales_monthly"
+      WHERE
+        "region_name" IS NULL
+        AND "province_name" IS NULL
+        AND "channel" IS NULL
+        AND "category" = '即饮茶'
+        AND DATE_TRUNC ('MONTH', "biz_date") BETWEEN '2024-01-01' AND '2024-12-31'
+      GROUP BY "category";
+      ```
+
+  - questions: 2024年农夫山泉集团在即饮茶类目的市场份额
+    sql: |
+      ```
+      WITH "group_sales" AS (
+        SELECT
+            SUM("amount") AS "group_amount"
+        FROM
+            "product_sales_monthly"
+        WHERE
+            DATE_TRUNC('MONTH', "biz_date") BETWEEN '2024-01-01' AND '2024-12-31'
+            AND "region_name" IS NULL
+            AND "province_name" IS NULL
+            AND "channel" IS NULL
+            AND "category" = '即饮茶'
+            AND "group_name" = '农夫山泉'
+      ),
+      "category_sales" AS (
+          SELECT
+              SUM("amount") AS "category_amount"
+          FROM
+              "product_sales_monthly"
+          WHERE
+              DATE_TRUNC('MONTH', "biz_date") BETWEEN '2024-01-01' AND '2024-12-31'
+              AND "region_name" IS NULL
+              AND "province_name" IS NULL
+              AND "channel" IS NULL
+              AND "category" = '即饮茶'
+      )
+      SELECT
+          '农夫山泉' AS "group_name",
+          '即饮茶' AS "category",
+          ROUND(CAST("gs"."group_amount" * 1.0 / NULLIF ("cs"."category_amount", 0) AS DECIMAL), 6) AS "market_share"
+      FROM
+          "group_sales" AS "gs"
+          CROSS JOIN "category_sales" AS "cs"
+      ```
+
+  - questions: 2025年Q1即饮茶各业态的销售额是多少？
+    sql: |
+      ```
+      WITH "filtered_data" AS (
+          SELECT
+              "channel",
+              SUM("amount") AS "amount"
+          FROM
+              "product_sales_monthly"
+          WHERE
+              "region_name" IS NULL
+              AND "province_name" IS NULL
+              AND NOT "channel" IS NULL
+              AND "category" = '即饮茶'
+              AND DATE_TRUNC('MONTH', "biz_date") BETWEEN '2025-01-01' AND '2025-03-01'
+          GROUP BY
+              "channel"
+      )
+      SELECT
+          "channel",
+          "amount"
+      FROM
+          "filtered_data"
+      ORDER BY
+          "channel"
+      ```
+  - questions: 饮料类目的2024年所有上市新品在今年销售额排行榜
+    sql: |
+      ```
+      WITH
+        "new_products" AS (
+          SELECT
+            "dp"."product_id" AS "product_id",
+            "dp"."product_name" AS "product_name"
+          FROM
+            "dim_product" AS "dp"
+            JOIN "dim_category" AS "dc" ON "dp"."category" = "dc"."category"
+          WHERE
+            "dp"."launch_time" >= CAST('2024-01-01' AS TIMESTAMPTZ)
+            AND "dp"."launch_time" < CAST('2025-01-01' AS TIMESTAMPTZ)
+            AND "dc"."cls_2" = '饮料'
+        ),
+        "sales_2025" AS (
+          SELECT
+            "psm"."product_id" AS "product_id",
+            SUM("psm"."amount") AS "amount"
+          FROM
+            "product_sales_monthly" AS "psm"
+          WHERE
+            "psm"."region_name" IS NULL
+            AND "psm"."province_name" IS NULL
+            AND "psm"."channel" IS NULL
+            AND "psm"."biz_date" >= CAST('2025-01-01' AS TIMESTAMPTZ)
+            AND "psm"."biz_date" < CAST('2026-01-01' AS TIMESTAMPTZ)
+          GROUP BY
+            "psm"."product_id"
+        )
+      SELECT
+        "np"."product_id" AS "product_id",
+        "np"."product_name" AS "product_name",
+        "s25"."amount" AS "amount",
+        RANK() OVER (
+          ORDER BY
+            "s25"."amount" DESC
+        ) AS "rank"
+      FROM
+        "new_products" AS "np"
+        JOIN "sales_2025" AS "s25" ON "np"."product_id" = "s25"."product_id"
+      ORDER BY
+        "rank"
+      ```

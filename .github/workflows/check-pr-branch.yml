@@ -1,0 +1,17 @@
+name: Check PR Branch
+
+on:
+  pull_request:
+
+jobs:
+  check_pr_branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR source branch
+        run: |
+          echo "PR source branch: ${{ github.head_ref }}"
+          if [[ "${{ github.head_ref }}" == "main" ]] || [[ "${{ github.head_ref }}" == "master" ]]; then
+            echo "❌ PR cannot be submitted from main or master branch!"
+            exit 1
+          fi
+          echo "✅ PR branch is valid"
